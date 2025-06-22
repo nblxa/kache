@@ -20,7 +20,7 @@ indent_style = space
 # denotes a line break in Markdown
 trim_trailing_whitespace = false
 
-[*.yaml]
+[{*.yaml,*.yml}]
 indent_size = 2
 
 [Makefile]
