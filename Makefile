@@ -1,0 +1,32 @@
+.PHONY: build
+
+REPO ?= ghcr.io/nblxa/kache
+TAG ?= 0.1.0
+IMAGE ?= "$(REPO):$(TAG)"
+PLATFORM ?= linux/arm64
+DOCKERFILE ?= build.dockerfile
+CONTEXT ?= .
+
+# Default target to build the image
+build_amd64:
+	podman build \
+		-t $(IMAGE) \
+		--cache-from $(REPO) \
+		--platform $(PLATFORM) \
+		-f $(DOCKERFILE) \
+		$(CONTEXT)
+
+build_arm64:
+	podman build \
+		-t $(IMAGE) \
+		--cache-from $(REPO) \
+		--platform linux/arm64 \
+		-f $(DOCKERFILE) \
+		$(CONTEXT)
+
+# Build and push the Helm chart
+helm:
+	# Change helm chart version to the current image tag
+	sed -i "s|^version: .*|version: $(TAG)|" charts/kache/Chart.yaml
+	sed -i "s|^appVersion: .*|appVersion: $(TAG)|" charts/kache/Chart.yaml
+	helm package charts/kache --destination charts/dist

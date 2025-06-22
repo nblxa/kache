@@ -1,8 +1,12 @@
 target
-helm
-build.dockerfile
+charts
+*.dockerfile
 .editorconfig
 .gitattributes
+.gitignore
+Makefile
+LICENSE
+*.sh
 
 # Ignore Roadiz tools and cache for
 # creating a docker image
