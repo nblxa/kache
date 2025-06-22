@@ -1,0 +1,26 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: "pod-policy.example.com"
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+webhooks:
+  - name: "pod-policy.example.com"
+    rules:
+      - apiGroups:   [""]
+        apiVersions: ["v1"]
+        operations:  ["CREATE"]
+        resources:   ["pods"]
+        scope:       "Namespaced"
+    clientConfig:
+      service:
+        namespace: "kache"
+        name: "kache-webhook"
+        port: {{ .Values.webhook.port }}
+      caBundle: <CA_BUNDLE>
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    timeoutSeconds: 5
