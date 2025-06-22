@@ -1,5 +1,6 @@
 webhook:
   port: 8443
+  failurePolicy: Ignore
 
 image:
   repository: ghcr.io/nblxa/kache

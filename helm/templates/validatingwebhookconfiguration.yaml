@@ -22,6 +22,8 @@ webhooks:
         operations:  ["CREATE"]
         resources:   ["pods"]
         scope:       "Namespaced"
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    sideEffects: None
     clientConfig:
       service:
         namespace: "kache"
