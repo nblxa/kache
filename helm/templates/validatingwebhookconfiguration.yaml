@@ -1,14 +1,21 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: "pod-policy.example.com"
+  name: {{ include "kache.name" . }}
+  {{- if .Values.certificates.certManager.enabled }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "kache.name" . }}
+  {{- end }}
   labels:
-    app.kubernetes.io/name: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "kache.labels" . | nindent 4 }}
 webhooks:
-  - name: "pod-policy.example.com"
+  - name: {{ include "kache.name" . }}.nblxa.github.io
+    namespaceSelector:
+      matchExpressions:
+        - key: "kache.nblxa.github.io/managed"
+          operator: "In"
+          values:
+            - "true"
     rules:
       - apiGroups:   [""]
         apiVersions: ["v1"]
@@ -20,7 +27,9 @@ webhooks:
         namespace: "kache"
         name: "kache-webhook"
         port: {{ .Values.webhook.port }}
+      {{- if not .Values.certificates.certManager.enabled }}
       caBundle: <CA_BUNDLE>
+      {{- end }}
     admissionReviewVersions: ["v1"]
     sideEffects: None
     timeoutSeconds: 5

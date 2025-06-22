@@ -1,0 +1,17 @@
+{{- if .Values.certificates.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "kache.name" . }}-tls
+  labels:
+    {{- include "kache.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    - {{ include "kache.name" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "kache.name" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ include "kache.name" . }}
+    namespace: {{ .Release.Namespace }}
+  secretName: {{ include "kache.name" . }}
+{{- end }}

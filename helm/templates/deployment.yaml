@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kache.name" . }}
+  labels:
+    {{- include "kache.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.hpa.minReplicas }}
+  selector:
+    matchLabels:
+      {{- include "kache.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kache.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: kache
+          image: {{ .Values.image.repository }}:{{ include "kache.imageTag" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.webhook.port }}
+              name: https
+          args:
+            - --tls-cert-file=/tls/tls.crt
+            - --tls-private-key-file=/tls/tls.key
+          env:
+            - name: WEBHOOK_PORT
+              value: "{{ .Values.webhook.port }}"
+            - name: WEBHOOK_CERT
+              value: "/tls/tls.crt"
+            - name: WEBHOOK_KEY
+              value: "/tls/tls.key"
+          volumeMounts:
+            - name: {{ include "kache.name" . }}-tls
+              mountPath: /tls
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: kache-webhook-certs
+      serviceAccountName: {{ include "kache.serviceAccount" . }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- range $key, $value := .Values.nodeSelector }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- range .Values.tolerations }}
+        - key: {{ .key }}
+          operator: {{ .operator }}
+          value: {{ .value }}
+          effect: {{ .effect }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}

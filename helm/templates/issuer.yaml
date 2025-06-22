@@ -1,0 +1,10 @@
+{{- if .Values.certificates.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "kache.name" . }}
+  labels:
+    {{- include "kache.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+{{- end }}

@@ -38,17 +38,26 @@ async fn main() {
         .route("/metrics", post(metrics_handler).get(metrics_handler))
         .with_state(state.clone());
 
-    let config = RustlsConfig::from_pem_file(
-        "/tls/tls.crt",
-        "/tls/tls.key",
-    ).await.unwrap();
+    let cert = get_cert();
+    let key = get_key();
+    let tls_config = RustlsConfig::from_pem_file(cert, key, ).await.unwrap();
 
     let port = get_port();
     let addr = format!("0.0.0.0:{}", port).parse().unwrap();
-    axum_server::bind_rustls(addr, config)
+    axum_server::bind_rustls(addr, tls_config)
         .serve(app.into_make_service_with_connect_info::<std::net::SocketAddr>())
         .await
         .unwrap();
+}
+
+fn get_cert() -> String {
+    std::env::var("WEBHOOK_CERT")
+        .unwrap_or_else(|_| "/tls/tls.crt".to_string())
+}
+
+fn get_key() -> String {
+    std::env::var("WEBHOOK_KEY")
+        .unwrap_or_else(|_| "/tls/tls.key".to_string())
 }
 
 fn get_port() -> u16 {
@@ -132,4 +141,54 @@ async fn metrics_handler(
     let mf = state.registry.gather();
     encoder.encode(&mf, &mut buffer).unwrap();
     String::from_utf8(buffer).unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_image;
+
+    #[test]
+    fn test_parse_image_simple() {
+        let (registry, name, tag, digest) = parse_image("nginx");
+        assert_eq!(registry, "");
+        assert_eq!(name, "nginx");
+        assert_eq!(tag, "latest");
+        assert_eq!(digest, "");
+    }
+
+    #[test]
+    fn test_parse_image_with_tag() {
+        let (registry, name, tag, digest) = parse_image("nginx:1.21");
+        assert_eq!(registry, "");
+        assert_eq!(name, "nginx");
+        assert_eq!(tag, "1.21");
+        assert_eq!(digest, "");
+    }
+
+    #[test]
+    fn test_parse_image_with_registry() {
+        let (registry, name, tag, digest) = parse_image("my.registry:5000/repo/nginx:1.21");
+        assert_eq!(registry, "my.registry:5000");
+        assert_eq!(name, "repo/nginx");
+        assert_eq!(tag, "1.21");
+        assert_eq!(digest, "");
+    }
+
+    #[test]
+    fn test_parse_image_with_digest() {
+        let (registry, name, tag, digest) = parse_image("nginx@sha256:abcdef");
+        assert_eq!(registry, "");
+        assert_eq!(name, "nginx");
+        assert_eq!(tag, "latest");
+        assert_eq!(digest, "sha256:abcdef");
+    }
+
+    #[test]
+    fn test_parse_image_full() {
+        let (registry, name, tag, digest) = parse_image("my.registry/repo/nginx:1.21@sha256:abcdef");
+        assert_eq!(registry, "my.registry");
+        assert_eq!(name, "repo/nginx");
+        assert_eq!(tag, "1.21");
+        assert_eq!(digest, "sha256:abcdef");
+    }
 }
