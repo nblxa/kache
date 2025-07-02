@@ -1,4 +1,4 @@
-name: Makefile CI
+name: Build image and chart
 
 on:
   push:
@@ -7,12 +7,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
-    runs-on: debian-latest
+  build-image:
+    runs-on: ubuntu-24.04-arm
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Build image
       run: make build_arm64
+
+  build-chart:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build charts
+      run: make helm_chart

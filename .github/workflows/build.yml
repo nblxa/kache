@@ -1,0 +1,34 @@
+name: Tags
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags like v1.0.0
+
+jobs:
+  push-image:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: make build_arm64 TAG="${{ github.ref_name }}"
+
+      # push image to registry
+      - name: Push image
+        run: |
+          docker login -u "$GITHUB_ACTOR" -p "${{ secrets.GITHUB_TOKEN }}" ghcr.io
+          make push_arm64 TAG="${{ github.ref_name }}"
+
+  push-chart:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build charts
+        run: make helm_chart TAG="${{ github.ref_name }}"
+
+      - name: Push charts
+        run: make helm_push TAG="${{ github.ref_name }}"
