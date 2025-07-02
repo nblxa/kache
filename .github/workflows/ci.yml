@@ -1,4 +1,4 @@
-name: Build Images and charts
+name: Build image and chart
 
 on:
   push:

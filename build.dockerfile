@@ -1,4 +1,4 @@
-FROM docker.io/library/rust:1.87-slim-bookworm AS build
+FROM docker.io/library/rust:1.88-slim-bookworm AS build
 
 # 2. Copy the files in your machine to the image
 COPY src/ /build/src/
